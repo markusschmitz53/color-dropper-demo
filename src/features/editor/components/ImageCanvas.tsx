@@ -8,6 +8,7 @@ interface ImageCanvasProps {
   imageData: string | null
   onColorPick: (color: string) => void
   isContained: boolean
+  isDropperActive: boolean
 }
 
 const THROTTLE_DELAY = 200
@@ -18,6 +19,7 @@ export default function ImageCanvas({
   imageData,
   onColorPick,
   isContained,
+  isDropperActive,
 }: Readonly<ImageCanvasProps>) {
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(
     null
@@ -102,7 +104,13 @@ export default function ImageCanvas({
   }, [calculateCanvasSize, imageElement])
 
   const handleMouseMove = throttle(() => {
-    if (!imageElement || !stageRef.current || !imageNodeRef.current) return
+    if (
+      !isDropperActive ||
+      !imageElement ||
+      !stageRef.current ||
+      !imageNodeRef.current
+    )
+      return
 
     const stage = stageRef.current.getStage()
     const pointerPosition = stage.getPointerPosition()

@@ -1,8 +1,11 @@
 import { ChangeEvent } from 'react'
+import ActivateDropperIcon from '../assets/IconColorPicker.svg?react'
 
 interface HeaderProps {
   onImageSelect: (image: string) => void
   pickedColorValue: string | null
+  isDropperActive: boolean
+  toggleDropper: () => void
   isContained: boolean
   toggleContain: () => void
 }
@@ -14,6 +17,8 @@ const FALLBACK_COLOR_LABEL = 'None'
 export default function Header({
   onImageSelect,
   pickedColorValue,
+  isDropperActive,
+  toggleDropper,
   isContained,
   toggleContain,
 }: Readonly<HeaderProps>) {
@@ -44,21 +49,38 @@ export default function Header({
           type="file"
           accept="image/*"
           onChange={handleImageUpload}
+          className="hidden"
         />
-        <p className="text-sm flex-grow">
-          Selected Color:{' '}
-          <span
-            className="font-semibold"
-            style={{ color: pickedColorValue ?? FALLBACK_COLOR_HEX }}
-          >
-            {pickedColorValue ?? FALLBACK_COLOR_LABEL}
-          </span>
-        </p>
+        <label
+          htmlFor="file-upload"
+          className="p-2 rounded-full border border-gray-100 bg-gray-50 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400  hover:border-purple-300 hover:border transition-all duration-200 transform cursor-pointer text-sm font-semibold"
+        >
+          Choose File
+        </label>
+        <button
+          onClick={toggleDropper}
+          className="p-2 rounded-full border-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-purple-300 transition-all duration-200 transform "
+        >
+          <ActivateDropperIcon className="h-6 w-6" />
+        </button>
+        <div className="flex-grow">
+          <p className="text-sm" hidden={!isDropperActive}>
+            Selected Color:{' '}
+            <span
+              className="font-semibold"
+              style={{ color: pickedColorValue ?? FALLBACK_COLOR_HEX }}
+            >
+              {pickedColorValue ?? FALLBACK_COLOR_LABEL}
+            </span>
+          </p>
+        </div>
         <button
           onClick={toggleContain}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="p-2 rounded-full border-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-purple-300 transition-all duration-200 transform"
         >
-          {isContained ? 'Use original size' : 'Contain image in Viewport'}
+          {!isContained
+            ? 'Displaying Original Image'
+            : 'Displaying Contained Image'}
         </button>
       </div>
     </header>
