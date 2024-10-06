@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Image as KonvaImage, Layer, Stage } from 'react-konva'
-import { debounce } from 'lodash'
+import { debounce, throttle } from 'lodash'
 import Konva from 'konva'
+import { calculateAspectRatioFit, rgbToHex } from '../../../utils/ImageUtils.ts'
 
 interface ImageCanvasProps {
   imageData: string | null
+  onColorPick: (color: string) => void
 }
 
+const THROTTLE_DELAY = 200
 const DEBOUNCE_DELAY = 200
 const CONTAINER_PADDING = 20
 
-export default function ImageCanvas({ imageData }: Readonly<ImageCanvasProps>) {
+export default function ImageCanvas({
+  imageData,
+  onColorPick,
+}: Readonly<ImageCanvasProps>) {
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(
     null
   )
@@ -23,6 +29,7 @@ export default function ImageCanvas({ imageData }: Readonly<ImageCanvasProps>) {
   })
   const containerRef = useRef<HTMLDivElement | null>(null)
   const stageRef = useRef<Konva.Stage | null>(null)
+  const imageNodeRef = useRef<Konva.Image | null>(null)
 
   const calculateCanvasSize = useCallback(() => {
     if (!imageElement || !containerRef.current) return
@@ -32,26 +39,18 @@ export default function ImageCanvas({ imageData }: Readonly<ImageCanvasProps>) {
 
     const containerWidth = containerRef.current.clientWidth
     const containerHeight = containerRef.current.clientHeight
-    const aspectRatio = imageElement.width / imageElement.height
 
-    let newWidth = containerWidth
-    let newHeight = newWidth / aspectRatio
-
-    // Adjust if height exceeds containerHeight
-    if (newHeight > containerHeight) {
-      newHeight = containerHeight
-      newWidth = newHeight * aspectRatio
-    }
-
-    // Adjust if width exceeds containerWidth (after previous adjustment)
-    if (newWidth > containerWidth) {
-      newWidth = containerWidth
-      newHeight = newWidth / aspectRatio
-    }
+    const { width, height } = calculateAspectRatioFit(
+      imageElement.width,
+      imageElement.height,
+      containerWidth,
+      containerHeight,
+      CONTAINER_PADDING
+    )
 
     setCanvasSize({
-      width: newWidth - CONTAINER_PADDING,
-      height: newHeight - CONTAINER_PADDING,
+      width,
+      height,
     })
   }, [imageElement])
 
@@ -93,6 +92,34 @@ export default function ImageCanvas({ imageData }: Readonly<ImageCanvasProps>) {
     }
   }, [calculateCanvasSize, imageElement])
 
+  const handleMouseMove = throttle(() => {
+    if (!imageElement || !stageRef.current || !imageNodeRef.current) return
+
+    const stage = stageRef.current.getStage()
+    const pointerPosition = stage.getPointerPosition()
+
+    if (!pointerPosition) {
+      console.warn('Failed to retrieve pointer position vector.')
+      return
+    }
+
+    const { x, y } = pointerPosition
+
+    // check if the pointer is within the canvas
+    if (x < 0 || y < 0 || x > canvasSize.width || y > canvasSize.height) {
+      return
+    }
+
+    const context = imageNodeRef?.current.getLayer()?.getContext()
+    if (!context) {
+      console.warn('Failed to retrieve context.')
+      return
+    }
+    const pixel = context.getImageData(x, y, 1, 1).data
+    const hexColor = rgbToHex(pixel)
+    onColorPick(hexColor)
+  }, THROTTLE_DELAY)
+
   return (
     <div
       ref={containerRef}
@@ -103,12 +130,14 @@ export default function ImageCanvas({ imageData }: Readonly<ImageCanvasProps>) {
           width={canvasSize.width}
           height={canvasSize.height}
           ref={stageRef}
+          onMouseMove={handleMouseMove}
         >
           <Layer>
             <KonvaImage
               image={imageElement}
               width={canvasSize.width}
               height={canvasSize.height}
+              ref={imageNodeRef}
             />
           </Layer>
         </Stage>
