@@ -11,7 +11,11 @@ export default function Editor() {
   return (
     <main className="bg-gray-200 min-h-screen flex flex-col">
       <Header
-        onImageSelect={(image) => setImageData(image)}
+        onImageSelect={(image) => {
+          setIsDropperActive(false)
+          setSelectedColor(null)
+          setImageData(image)
+        }}
         isDropperActive={isDropperActive}
         toggleDropper={() => setIsDropperActive((prev) => !prev)}
         isContained={isContained}
