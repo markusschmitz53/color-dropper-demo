@@ -66,10 +66,7 @@ export default function Header({
         <div className="flex-grow">
           <p className="text-sm" hidden={!isDropperActive}>
             Selected Color:{' '}
-            <span
-              className="font-semibold"
-              style={{ color: pickedColorValue ?? FALLBACK_COLOR_HEX }}
-            >
+            <span className="font-semibold">
               {pickedColorValue ?? FALLBACK_COLOR_LABEL}
             </span>
           </p>
