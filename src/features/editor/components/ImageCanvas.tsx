@@ -7,6 +7,7 @@ import { calculateAspectRatioFit, rgbToHex } from '../../../utils/ImageUtils.ts'
 interface ImageCanvasProps {
   imageData: string | null
   onColorPick: (color: string) => void
+  isContained: boolean
 }
 
 const THROTTLE_DELAY = 200
@@ -16,6 +17,7 @@ const CONTAINER_PADDING = 20
 export default function ImageCanvas({
   imageData,
   onColorPick,
+  isContained,
 }: Readonly<ImageCanvasProps>) {
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(
     null
@@ -37,22 +39,29 @@ export default function ImageCanvas({
       throw new Error('Image dimension assertion failed.')
     }
 
-    const containerWidth = containerRef.current.clientWidth
-    const containerHeight = containerRef.current.clientHeight
+    if (isContained) {
+      const containerWidth = containerRef.current.clientWidth
+      const containerHeight = containerRef.current.clientHeight
 
-    const { width, height } = calculateAspectRatioFit(
-      imageElement.width,
-      imageElement.height,
-      containerWidth,
-      containerHeight,
-      CONTAINER_PADDING
-    )
+      const { width, height } = calculateAspectRatioFit(
+        imageElement.width,
+        imageElement.height,
+        containerWidth,
+        containerHeight,
+        CONTAINER_PADDING
+      )
 
-    setCanvasSize({
-      width,
-      height,
-    })
-  }, [imageElement])
+      setCanvasSize({
+        width,
+        height,
+      })
+    } else {
+      setCanvasSize({
+        width: imageElement.width,
+        height: imageElement.height,
+      })
+    }
+  }, [isContained, imageElement])
 
   useEffect(() => {
     if (!imageData) return
