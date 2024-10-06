@@ -28,6 +28,7 @@ export default function ImageCanvas({
   isDropperActive,
 }: Readonly<ImageCanvasProps>) {
   const [matrixColors, setMatrixColors] = useState<string[][]>([])
+  const [currentHexColor, setCurrentHexColor] = useState<string | null>(null)
   const [magnifierPosition, setMagnifierPosition] = useState<{
     x: number
     y: number
@@ -97,6 +98,12 @@ export default function ImageCanvas({
     }
   }, [calculateCanvasSize, imageData])
 
+  const handleMouseClick = () => {
+    if (currentHexColor) {
+      onColorPick(currentHexColor) // Emit the selected color on click
+    }
+  }
+
   const handleMouseMove = throttle(() => {
     if (
       !isDropperActive ||
@@ -114,7 +121,7 @@ export default function ImageCanvas({
       return
     }
 
-    let { x, y } = pointerPosition
+    const { x, y } = pointerPosition
 
     // Check if the pointer is within the canvas
     if (x < 0 || y < 0 || x > canvasSize.width || y > canvasSize.height) {
@@ -151,8 +158,7 @@ export default function ImageCanvas({
       data[centerIndex + 1],
       data[centerIndex + 2]
     )
-    onColorPick(centerColor)
-
+    setCurrentHexColor(centerColor)
     setMagnifierPosition({ x: x - window.scrollX, y: y - window.scrollY })
   }, THROTTLE_DELAY)
 
@@ -165,6 +171,7 @@ export default function ImageCanvas({
             height={canvasSize.height}
             ref={stageRef}
             onMouseMove={handleMouseMove}
+            onClick={handleMouseClick}
           >
             <Layer>
               <KonvaImage

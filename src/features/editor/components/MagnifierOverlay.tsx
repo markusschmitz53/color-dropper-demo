@@ -14,7 +14,7 @@ export default function MagnifierOverlay({
 
   // set picker position and make up for the size of the picker
   const pickerDynamicStyle = {
-    transform: `translate(${position.x - 90}px, ${position.y - 90}px)`,
+    transform: `translate(${position.x - 90}px, ${position.y - 90}px)`, // todo: calculate adjusted position in service
     borderColor: centerColor, // Dynamic border color set to the center pixel color
   }
 
