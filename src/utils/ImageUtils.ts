@@ -13,10 +13,27 @@ export const rgbToHex = (r: number, g: number, b: number): string => {
 export const extractMatrixColors = (
   data: Uint8ClampedArray,
   regionWidth: number,
-  regionHeight: number
+  regionHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  startX: number,
+  startY: number
 ): string[][] => {
   return Array.from({ length: regionHeight }, (_, i) =>
     Array.from({ length: regionWidth }, (_, j) => {
+      const currentX = startX + j
+      const currentY = startY + i
+
+      // Check if current pixel is out of bounds
+      if (
+        currentX < 0 ||
+        currentY < 0 ||
+        currentX >= canvasWidth ||
+        currentY >= canvasHeight
+      ) {
+        return '#ffffff' // Out-of-bounds pixels are white
+      }
+
       const index = (i * regionWidth + j) * 4
       const r = data[index]
       const g = data[index + 1]

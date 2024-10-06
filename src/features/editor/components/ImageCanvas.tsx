@@ -134,31 +134,39 @@ export default function ImageCanvas({
       return
     }
 
-    // retrieve the pixel data for magnified region
-    const regionX = Math.max(x - MATRIX_SIDE, 0)
-    const regionY = Math.max(y - MATRIX_SIDE, 0)
-    const regionWidth = Math.min(MATRIX_SIZE, canvasSize.width - regionX)
-    const regionHeight = Math.min(MATRIX_SIZE, canvasSize.height - regionY)
+    // Define the region to be extracted
+    const regionX = x - MATRIX_SIDE
+    const regionY = y - MATRIX_SIDE
+    const regionWidth = MATRIX_SIZE
+    const regionHeight = MATRIX_SIZE
 
     const imageData = context.getImageData(
-      regionX,
-      regionY,
-      regionWidth,
-      regionHeight
+      Math.max(regionX, 0),
+      Math.max(regionY, 0),
+      Math.min(regionWidth, canvasSize.width - regionX),
+      Math.min(regionHeight, canvasSize.height - regionY)
     )
-    const data = imageData.data
 
-    const colors = extractMatrixColors(data, regionWidth, regionHeight)
+    const colors = extractMatrixColors(
+      imageData.data,
+      regionWidth,
+      regionHeight,
+      canvasSize.width,
+      canvasSize.height,
+      regionX,
+      regionY
+    )
     setMatrixColors(colors)
 
-    const centerIndex =
-      (MATRIX_SIDE * regionWidth + MATRIX_SIDE) * (MATRIX_SIDE / 2)
+    // Set the current hex color for the central pixel
+    const centerIndex = (MATRIX_SIDE * regionWidth + MATRIX_SIDE) * 4
     const centerColor = rgbToHex(
-      data[centerIndex],
-      data[centerIndex + 1],
-      data[centerIndex + 2]
+      imageData.data[centerIndex],
+      imageData.data[centerIndex + 1],
+      imageData.data[centerIndex + 2]
     )
     setCurrentHexColor(centerColor)
+
     setMagnifierPosition({ x: x - window.scrollX, y: y - window.scrollY })
   }, THROTTLE_DELAY)
 

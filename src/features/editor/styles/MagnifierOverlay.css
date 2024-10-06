@@ -1,5 +1,5 @@
 .dropper-wrap {
-    display: inline-flex;
+    display: absolute;
 }
 
 .dropper-picker {
