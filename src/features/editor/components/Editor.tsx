@@ -1,13 +1,17 @@
 import Header from '../../../components/Header.tsx'
+import ImageCanvas from './ImageCanvas.tsx'
+import { useState } from 'react'
 
 export default function Editor() {
+  const [imageData, setImageData] = useState<string | null>(null)
+
   return (
-    <main>
+    <main className="bg-gray-200 min-h-screen flex flex-col">
       <Header
-        onImageSelect={(image) => console.log(image)}
+        onImageSelect={(image) => setImageData(image)}
         pickedColorValue="#fff"
       />
-      <section>works</section>
+      <ImageCanvas imageData={imageData} />
     </main>
   )
 }
