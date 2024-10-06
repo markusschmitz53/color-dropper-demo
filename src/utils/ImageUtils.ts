@@ -1,7 +1,29 @@
-export const rgbToHex = (pixel: Uint8ClampedArray): string => {
+export const rgbClampedToHex = (pixel: Uint8ClampedArray): string => {
+  // @see https://stackoverflow.com/a/5624139
   return `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2])
     .toString(16)
     .slice(1)}`
+}
+
+export const rgbToHex = (r: number, g: number, b: number): string => {
+  // @see https://stackoverflow.com/a/5624139
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+}
+
+export const extractMatrixColors = (
+  data: Uint8ClampedArray,
+  regionWidth: number,
+  regionHeight: number
+): string[][] => {
+  return Array.from({ length: regionHeight }, (_, i) =>
+    Array.from({ length: regionWidth }, (_, j) => {
+      const index = (i * regionWidth + j) * 4
+      const r = data[index]
+      const g = data[index + 1]
+      const b = data[index + 2]
+      return rgbToHex(r, g, b)
+    })
+  )
 }
 
 interface Dimensions {

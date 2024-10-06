@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Image as KonvaImage, Layer, Stage } from 'react-konva'
-import { debounce, throttle } from 'lodash'
+import { throttle } from 'lodash'
 import Konva from 'konva'
-import { calculateAspectRatioFit, rgbToHex } from '../../../utils/ImageUtils.ts'
+import {
+  calculateAspectRatioFit,
+  extractMatrixColors,
+  rgbToHex,
+} from '../../../utils/ImageUtils.ts'
+import MagnifierOverlay from './MagnifierOverlay.tsx'
 
 interface ImageCanvasProps {
   imageData: string | null
@@ -12,8 +17,9 @@ interface ImageCanvasProps {
 }
 
 const THROTTLE_DELAY = 200
-const DEBOUNCE_DELAY = 200
 const CONTAINER_PADDING = 20
+const MATRIX_SIZE = 17
+const MATRIX_SIDE = 8
 
 export default function ImageCanvas({
   imageData,
@@ -21,6 +27,11 @@ export default function ImageCanvas({
   isContained,
   isDropperActive,
 }: Readonly<ImageCanvasProps>) {
+  const [matrixColors, setMatrixColors] = useState<string[][]>([])
+  const [magnifierPosition, setMagnifierPosition] = useState<{
+    x: number
+    y: number
+  } | null>(null)
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(
     null
   )
@@ -86,23 +97,6 @@ export default function ImageCanvas({
     }
   }, [calculateCanvasSize, imageData])
 
-  useEffect(() => {
-    if (!imageElement) return
-
-    // Update canvas size on resize
-    const handleResize = debounce(calculateCanvasSize, DEBOUNCE_DELAY)
-
-    window.addEventListener('resize', handleResize)
-
-    // Initial resize to set the correct size when mounting
-    handleResize()
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      handleResize.cancel()
-    }
-  }, [calculateCanvasSize, imageElement])
-
   const handleMouseMove = throttle(() => {
     if (
       !isDropperActive ||
@@ -120,9 +114,9 @@ export default function ImageCanvas({
       return
     }
 
-    const { x, y } = pointerPosition
+    let { x, y } = pointerPosition
 
-    // check if the pointer is within the canvas
+    // Check if the pointer is within the canvas
     if (x < 0 || y < 0 || x > canvasSize.width || y > canvasSize.height) {
       return
     }
@@ -132,32 +126,62 @@ export default function ImageCanvas({
       console.warn('Failed to retrieve context.')
       return
     }
-    const pixel = context.getImageData(x, y, 1, 1).data
-    const hexColor = rgbToHex(pixel)
-    onColorPick(hexColor)
+
+    // retrieve the pixel data for magnified region
+    const regionX = Math.max(x - MATRIX_SIDE, 0)
+    const regionY = Math.max(y - MATRIX_SIDE, 0)
+    const regionWidth = Math.min(MATRIX_SIZE, canvasSize.width - regionX)
+    const regionHeight = Math.min(MATRIX_SIZE, canvasSize.height - regionY)
+
+    const imageData = context.getImageData(
+      regionX,
+      regionY,
+      regionWidth,
+      regionHeight
+    )
+    const data = imageData.data
+
+    const colors = extractMatrixColors(data, regionWidth, regionHeight)
+    setMatrixColors(colors)
+
+    const centerIndex =
+      (MATRIX_SIDE * regionWidth + MATRIX_SIDE) * (MATRIX_SIDE / 2)
+    const centerColor = rgbToHex(
+      data[centerIndex],
+      data[centerIndex + 1],
+      data[centerIndex + 2]
+    )
+    onColorPick(centerColor)
+
+    setMagnifierPosition({ x: x - window.scrollX, y: y - window.scrollY })
   }, THROTTLE_DELAY)
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 flex items-center justify-center w-screen h-screen"
-    >
+    <div ref={containerRef} className="flex-1 w-screen h-screen relative">
       {imageElement ? (
-        <Stage
-          width={canvasSize.width}
-          height={canvasSize.height}
-          ref={stageRef}
-          onMouseMove={handleMouseMove}
-        >
-          <Layer>
-            <KonvaImage
-              image={imageElement}
-              width={canvasSize.width}
-              height={canvasSize.height}
-              ref={imageNodeRef}
+        <>
+          <Stage
+            width={canvasSize.width}
+            height={canvasSize.height}
+            ref={stageRef}
+            onMouseMove={handleMouseMove}
+          >
+            <Layer>
+              <KonvaImage
+                image={imageElement}
+                width={canvasSize.width}
+                height={canvasSize.height}
+                ref={imageNodeRef}
+              />
+            </Layer>
+          </Stage>
+          {isDropperActive && magnifierPosition && (
+            <MagnifierOverlay
+              matrixColors={matrixColors}
+              position={magnifierPosition}
             />
-          </Layer>
-        </Stage>
+          )}
+        </>
       ) : (
         <p className="font-semibold text-gray-400 select-none">
           Please select a file
